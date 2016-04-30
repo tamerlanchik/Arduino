@@ -10,7 +10,7 @@ K1="Колено 1:"
 K2="Колено 2:"
 K3="Поворот:"
 N="Угол:"
-
+rryyry
 
 class QLabel1(QLabel):
     def setText(self, t):
