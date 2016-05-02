@@ -7,11 +7,12 @@ from PyQt5.QtGui import QIcon, QColor
 import os
 import serial
 
-
-K1="Колено 1:"
+K=["Колено 1:", "Колено 2:", "Поворот:"]
+'''K1="Колено 1:"
 K2="Колено 2:"
-K3="Поворот:"
+K3="Поворот:"'''
 N="Угол:"
+sliderCount=3
 setPortText="Текущий порт:"
 ERR_openSerial='Не удалось открыть порт.'
 
@@ -25,6 +26,8 @@ class Connector():
         self.currentPort=1
         self.isConnectedFlag=True
         self.temp=self.dataBase.readline().replace('\n', '')
+        
+        self.currentPosition=[90]*3
         
         try:
             self.currentPort=int(self.temp)
@@ -67,10 +70,14 @@ class QLabel1(QLabel):
     def setText(self, t):
         QLabel.setText(self, str(t)+'°')
         
+        
+        
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
         controller=QWidget()
+        controller.sliderBoard=[ [0]*4 for _ in range(sliderCount) ]
+        controller.hbox=[0]*sliderCount
         
         self.initUI(controller)       
         
@@ -83,49 +90,81 @@ class Window(QMainWindow):
         
     def initUI(self, controller):
         
+        controller.vbox=QVBoxLayout()
+        
         controller.c=QComboBox(controller)
         controller.c.addItems(core.portList)
         controller.c.setCurrentIndex(core.currentPort)
         controller.c.activated[str].connect(self.updatePort)
         
         controller.setPortLabel=QLabel(setPortText, controller)
-        hbox0=QHBoxLayout()
-        hbox0.addWidget(controller.setPortLabel)
-        hbox0.addWidget(controller.c)
+        hbox01=QHBoxLayout()
+        hbox01.addWidget(controller.setPortLabel)
+        hbox01.addWidget(controller.c)
         
         self.j=QLabel('<FONT COLOR="red">Не удалось подключиться к порту '+core.portList[core.currentPort]+'</FONT>')
-        #controller.isConnectedLabel.setPalette(controller.color.red())
         
-        hbox00=QHBoxLayout()
-        hbox00.addWidget(self.j)
+        hbox0=QHBoxLayout()
+        hbox0.addWidget(self.j)
+        
+        controller.vbox.addLayout(hbox01)
+        controller.vbox.addLayout(hbox0)
+        controller.vbox.addStretch(2)
         
         #----------------------------------- 
         
-        controller.n1=QLabel(N, controller)
+        '''controller.n1=QLabel(N, controller)
         controller.n2=QLabel(N, controller)
-        controller.n3=QLabel(N, controller)
-        #----------------------------------
+        controller.n3=QLabel(N, controller)'''
         
-        sld1 = QSlider(Qt.Horizontal, controller)
-        sld1.setMaximum(180)
-        controller.lName1=QLabel(K1, controller)
-        controller.l1=QLabel1('0°', controller)        
-        sld1.valueChanged[int].connect(self.handleValue)
+        for i in range(sliderCount):
+            controller.sliderBoard[i][0]=QLabel(K[i], controller)
+            controller.sliderBoard[i][1]=QSlider(Qt.Horizontal, controller)
+            controller.sliderBoard[i][2]=QLabel(N, controller)
+            controller.sliderBoard[i][3]=QLabel1('0°', controller)
+            
+            controller.sliderBoard[i][1].setMaximum(180)
+            controller.sliderBoard[i][1].valueChanged[int].connect(self.handleValue)
+            
         
         
-        sld2 = QSlider(Qt.Horizontal, controller)
+        for i in range(sliderCount):
+            controller.hbox[i]=QHBoxLayout()
+            controller.hbox[i].addWidget(controller.sliderBoard[i][0])
+            controller.hbox[i].addWidget(controller.sliderBoard[i][1])
+            controller.hbox[i].addStretch(1)
+            controller.hbox[i].addWidget(controller.sliderBoard[i][2])
+            controller.hbox[i].addWidget(controller.sliderBoard[i][3])
+            controller.hbox[i].addStretch(1)
+            controller.vbox.addLayout(controller.hbox[i])
+            
+        
+        '''for i in range(SLiderCount):
+            controller.sld[i] = QSlider(Qt.Horizontal, controller)
+            controller.sld[i].setMaximum(180)
+            controller.sld[i].valueChanged[int].connect(self.handleValue)
+            controller.lbl[i]=QLabel1('0°', controller)'''
+            
+        ''' controller.lName1=QLabel(K1, controller)
+        controller.lName2=QLabel(K2, controller)
+        controller.lName3=QLabel(K3, controller)'''
+                
+        
+        
+        '''sld2 = QSlider(Qt.Horizontal, controller)
         sld2.setMaximum(180)
         controller.l2=QLabel1('0°', controller)
-        controller.lName2=QLabel(K2, controller)
-        sld2.valueChanged[int].connect(self.handleValue)
+        sld2.valueChanged[int].connect(self.handleValue)'''
         
-        controller.l3=QLabel1('0°', controller)
-        controller.lName3=QLabel(K3, controller)
-        sld3 = QSlider(Qt.Horizontal, controller)  
+        
+        
+        
+        '''sld3 = QSlider(Qt.Horizontal, controller)  
         sld3.setMaximum(180)
         sld3.valueChanged[int].connect(self.handleValue) 
-        
-        hbox1=QHBoxLayout()
+        controller.l3=QLabel1('0°', controller)'''
+                
+        '''hbox1=QHBoxLayout()
         hbox1.addWidget(controller.lName1)
         hbox1.addWidget(sld1)
         hbox1.addStretch(1)
@@ -157,14 +196,14 @@ class Window(QMainWindow):
         vbox.addLayout(hbox1)
         vbox.addLayout(hbox2)
         
-        vbox.addLayout(hbox3)
+        vbox.addLayout(hbox3)'''
         
-        controller.setLayout(vbox)
-        self.updateLabel()
+        controller.setLayout(controller.vbox)
+        #self.updateLabel()
     
     def handleValue(self, value):
-        #self.sender=self.sender()
-        #print('Sender: '+str(sender))
+        sender=self.sender()
+        print(str(sender.name()) + ' was pressed')
         #self.sender.setText(value)
         #core.sendPosition(value, self.controller.sender.text())
         print('s')
@@ -172,6 +211,7 @@ class Window(QMainWindow):
     def updatePort(self, value):
         core.updatePort(value)
         self.updateLabel()
+        
     def updateLabel(self):
         
         if (core.isConnectedFlag==True):
