@@ -1,7 +1,9 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+#include <String.h>
 LiquidCrystal_I2C lcd(0x27, 16, 2);
-long long ans=0;
+int sender=0;
+int val=0;
 char temp='a';
 int t=0;
 void setup() {
@@ -12,26 +14,42 @@ void setup() {
 
 void loop() {
   
+    while(temp!='%')
+    {
+      while (Serial.available()>0)
+      {        
+        temp=char( Serial.read() ) ;
+        if(temp!='%')
+          sender=sender*10+int(temp-'0');
+        else break;
+        delay(2);        
+      }
+    }
+    lcd.clear();
+    lcd.print("sender done");
+
     while(temp!='$')
     {
       while (Serial.available()>0)
-      {
-        
+      {        
         temp=char( Serial.read() ) ;
         if(temp!='$')
-        {
-          
-          ans=ans*10+int(temp-'0');
-        }
-        delay(2);
-        
+          val=val*10+int(temp-'0');
+        else break;
+        delay(2);        
       }
     }
     
     lcd.clear();
-    lcd.print(long(ans));
-    ans=0;
+    lcd.print(sender);
+    lcd.print(" ");
+    lcd.print(val);
+    sender=0;
+    val=0;
     temp='a';
+
+  /*lcd.print(char('a'+'a'));
+  delay(1000);*/
  
 
 }
