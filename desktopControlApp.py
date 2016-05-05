@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
-
+import time
+from math import fabs
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QLCDNumber, QSlider,
@@ -28,6 +29,7 @@ class Connector():
         self.currentPort=1
         self.isConnectedFlag=True
         self.temp=self.dataBase.readline().replace('\n', '')
+        self.lastUpdateTime=time.time()
         
         try:
             self.currentPort=int(self.temp)
@@ -53,9 +55,19 @@ class Connector():
         
         
     def sendPosition(self, value, sender):
-        
-        self.SERIAL.write(bytes((str(value)+'$').encode('utf-8')))
-        print(str(value))
+        #print(ord(value))
+        #print("s"+str(fabs(0.1-(time.time()-self.lastUpdateTime))))
+        '''try:
+            if time.time()-self.lastUpdateTime>0.05:
+                #print("s"+str(fabs(0.1-(time.time()-self.lastUpdateTime))))
+                #time.sleep(fabs(0.1-(time.time()-self.lastUpdateTime)))
+                             
+        except:
+            print('a')'''
+        #self.SERIAL.write(bytes((str(chr(sender))+'%'+str(chr(value))+'$').encode('utf-8')))
+        self.SERIAL.write(bytes((str(chr(sender))+str(chr(value))).encode('utf-8')))
+        print(value)
+        #self.lastUpdateTime=time.time()          
         
         
     def update_dataBase(self):     
@@ -67,7 +79,7 @@ class Connector():
         print('The database was updated\n')
     
     def closeSerial(self):
-        self.Serial.close()
+        self.SERIAL.close()
 
 
         
@@ -175,22 +187,27 @@ class Window(QMainWindow):
         
         
     def updatePort(self, port):
-        flag=core.connect_(port)
-        self.updateLabel(port, flag)
-        '''if(flag==False):
-            fallenConnect=QWidget()
-            fallenConnect.bt=QPushButton('OK', fallenConnect)
-            reply=QMessageBox.information(fallenConnect, 'Alert', ERR_openSerial, QMessageBox.Ok, QMessageBox.NoButton) '''     
-        
-    def updateLabel(self, port, flag):
-        
-        if (flag==True):
-                
-            self.j.setText('<font color="green">Arduino успешно подключено к порту '+port+'</font>')
-                           
-                
+        if port!='Не выбрано':
+            flag=core.connect_(port)
+            self.updateLabel(port, flag)
         else:
-            self.j.setText('<FONT COLOR="red">Не удалось подключиться к порту '+port+'</font>')
+            core.closeSerial()
+            self.updateLabel()
+            
+                 
+        
+    def updateLabel(self, port=-1, flag=False):
+        if port!=-1:
+        
+            if (flag==True):
+                    
+                self.j.setText('<font color="green">Arduino успешно подключено к порту '+port+'</font>')
+                               
+                    
+            else:
+                self.j.setText('<FONT COLOR="red">Не удалось подключиться к порту '+port+'</font>')
+        else:
+            self.j.setText('<font color="blue">Не подключено</font>')
                   
                        
 
