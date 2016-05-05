@@ -16,30 +16,22 @@ void loop() {
     {
       while (Serial.available()>0)
       {
-        lcd.setCursor(0, 1);
-        lcd.print("   ");
-        lcd.setCursor(0, 1);
-        lcd.print(Serial.available());
-        delay(100);
+        
         temp=char( Serial.read() ) ;
         if(temp!='$')
         {
           
           ans=ans*10+int(temp-'0');
         }
-        delay(3);
+        delay(2);
         
       }
     }
     
     lcd.clear();
-    //lcd.print(char(Serial.read()));
-    lcd.print(char(ans));
+    lcd.print(long(ans));
     ans=0;
     temp='a';
-
-  /*lcd.print(char('a'+'a'));
-  delay(1000);*/
  
 
 }
