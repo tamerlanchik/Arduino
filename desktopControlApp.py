@@ -13,7 +13,7 @@ import serial
 
 K=["Колено 1:", "Колено 2:", "Поворот:", "X1", "X2"]
 N="Угол:"
-sliderCount=5
+sliderCount=3
 
 setPortText="Текущий порт:"
 ERR_openSerial='Не удалось открыть порт.'
@@ -28,58 +28,43 @@ class Connector():
         self.dataBase=open('dataBase.txt', 'r')
         self.currentPort=1
         self.isConnectedFlag=True
-        self.temp=self.dataBase.readline().replace('\n', '')
         self.lastUpdateTime=time.time()
-        
-        try:
-            self.currentPort=int(self.temp)
-        except:
-            self.currentPort=0
     
     def connect_(self, e=-1):
-        if e!=-1:
-            self.currentPort=self.portList.index(e)
-            
         try:
-            
-            try: self.SERIAL.close()
-            except: pass
-            self.SERIAL=serial.Serial(self.portList[self.currentPort], 9600)
-            self.isConnectedFlag=True
-            return True
-            
-        except:
-            
-            self.isConnectedFlag=False
-            return False
+            if e!=-1:
+                self.currentPort=self.portList.index(e)
+                
+            try:
+                
+                try: self.SERIAL.close()
+                except: pass
+                self.SERIAL=serial.Serial(self.portList[self.currentPort], 9600)
+                self.isConnectedFlag=True
+                return True
+                
+            except:
+                
+                self.isConnectedFlag=False
+                return False
+        except: print('Error in "connect_"')
         
         
     def sendPosition(self, value, sender):
-        #print(ord(value))
-        #print("s"+str(fabs(0.1-(time.time()-self.lastUpdateTime))))
-        '''try:
-            if time.time()-self.lastUpdateTime>0.05:
-                #print("s"+str(fabs(0.1-(time.time()-self.lastUpdateTime))))
-                #time.sleep(fabs(0.1-(time.time()-self.lastUpdateTime)))
-                             
-        except:
-            print('a')'''
-        #self.SERIAL.write(bytes((str(chr(sender))+'%'+str(chr(value))+'$').encode('utf-8')))
-        self.SERIAL.write(bytes((str(chr(sender))+str(chr(value))).encode('utf-8')))
-        print(value)
-        #self.lastUpdateTime=time.time()          
+        try:
+            if (time.time()-self.lastUpdateTime)>0.01:
+                self.SERIAL.write(bytes((str(sender)+'%'+str(value)+'$').encode('utf-8')))
+                self.lastUpdateTime=time.time()
+            return ("Position was sent")
+        
+        except: print('Error in "sendPosition"'); return ("Failed send position")
         
         
-    def update_dataBase(self):     
-        
-        self.dataBase.close()
-        self.updateData=open('dataBase.txt', 'w')
-        print(self.currentPort, file=self.updateData)
-        self.updateData.close()
-        print('The database was updated\n')
     
     def closeSerial(self):
-        self.SERIAL.close()
+        try:
+            self.SERIAL.close()
+        except: print('Error in "closeSerial"')
 
 
         
@@ -99,7 +84,9 @@ class Window(QMainWindow):
         
         self.setCentralWidget(self.controller)        
         
-        self.setGeometry(400, 400, 250, 70+30*sliderCount)
+        self.statusBar().showMessage('Открыто')
+        
+        self.setGeometry(400, 400, 600, 70+30*sliderCount)
         self.setWindowTitle('Manip arduino')
         self.setWindowIcon(QIcon('icon.png'))
         self.show()
@@ -152,6 +139,7 @@ class Window(QMainWindow):
             self.controller.sliderBoard[i][1].setMaximum(self.sliderMaxValue*(i+1)-1)
             self.controller.sliderBoard[i][1].setValue(self.sliderPosition[i])
             self.controller.sliderBoard[i][1].valueChanged[int].connect(self.handleValue)
+            self.controller.sliderBoard[i][1].setMinimumWidth(400)
             
             #вычисление стартового значения ползунков
             val=self.controller.sliderBoard[i][1].value()-i*self.sliderMaxValue       
@@ -179,41 +167,46 @@ class Window(QMainWindow):
         self.controller.setLayout(self.controller.vbox)
     
     def handleValue(self, value):
-        sender=value//(self.sliderMaxValue)
-        val=value-sender*self.sliderMaxValue
-        self.sliderPosition[sender]=val
-        self.controller.sliderBoard[sender][3].setText(str(val)+'°')
-        core.sendPosition(val, sender)
+        try:
+            sender=value//(self.sliderMaxValue)
+            val=value-sender*self.sliderMaxValue
+            self.sliderPosition[sender]=val
+            self.controller.sliderBoard[sender][3].setText(str(val)+'°')
+            self.statusBar().showMessage(core.sendPosition(val, sender))
+        except: self.statusBar().showMessage('An ERROR in "handleValue"')
         
         
     def updatePort(self, port):
-        if port!='Не выбрано':
-            flag=core.connect_(port)
-            self.updateLabel(port, flag)
-        else:
-            core.closeSerial()
-            self.updateLabel()
-            
+        try:
+            if port=='Не выбрано':
+                core.closeSerial()
+                self.updateLabel()            
+    
+            else:
+                flag=core.connect_(port)
+                self.updateLabel(port, flag)
+        except: self.statusBar().showMessage('An ERROR in "updatePort"')
+                
                  
         
     def updateLabel(self, port=-1, flag=False):
-        if port!=-1:
-        
-            if (flag==True):
-                    
-                self.j.setText('<font color="green">Arduino успешно подключено к порту '+port+'</font>')
-                               
-                    
+        try:
+            if port!=-1:
+            
+                if (flag==True):
+                        
+                    self.j.setText('<font color="green">Arduino успешно подключено к порту '+port+'</font>')
+                                   
+                        
+                else:
+                    self.j.setText('<FONT COLOR="red">Не удалось подключиться к порту '+port+'</font>')
             else:
-                self.j.setText('<FONT COLOR="red">Не удалось подключиться к порту '+port+'</font>')
-        else:
-            self.j.setText('<font color="blue">Не подключено</font>')
-                  
+                self.j.setText('<font color="blue">Не подключено</font>')
+        except: self.statusBar().showMessage('An ERROR in "updateLabel"')
                        
 
             
     def closeEvent(self, event):
-        core.update_dataBase()
         core.closeSerial()
         
         
