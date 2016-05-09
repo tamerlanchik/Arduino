@@ -8,8 +8,11 @@ int lastValues[3]={90, 90, 90};
 const char stoppers[2]={'%', '$'};
 const int countServos=3;
 const char powerKey=7;
+
 Servo servoMap[countServos];
 const char servoPin[3]={9, 10, 11};
+const int minValueServo[3]={0, 10, 20};
+const int maxValueServo[3]={180, 165, 165}; 
 
 void setup() {
   pinMode(powerKey, OUTPUT);
@@ -23,7 +26,7 @@ void setup() {
     
   Serial.begin(9600);
   
-  lcd.print("R:  1:  2:");
+  lcd.print("1:  2:  R:");
   lcd.setCursor(0, 1);
   lcd.print("90  90  90");
   
@@ -37,9 +40,11 @@ void serialEvent()
   {
     if (val>180)
       val=lastValues[port];
-      
-    lastValues[port]=val;
+
     
+    lastValues[port]=val;
+
+    val=constrain(val, minValueServo[port], maxValueServo[port]);
     setServoToPosition(port, val);
     
     lcd.setCursor(4*port, 1);
