@@ -11,8 +11,8 @@ const char powerKey=7;
 
 Servo servoMap[countServos];
 const char servoPin[3]={9, 10, 11};
-const int minValueServo[3]={0, 10, 20};
-const int maxValueServo[3]={180, 165, 165}; 
+const int minValueServo[3]={30, 30, 30};
+const int maxValueServo[3]={160, 165, 165}; 
 
 void setup() {
   pinMode(powerKey, OUTPUT);
@@ -24,18 +24,18 @@ void setup() {
   for(int i=0; i<countServos; i++)
     servoMap[i].attach(servoPin[i]);
     
-  Serial.begin(9600);
+  Serial.begin(38400);
   
   lcd.print("1:  2:  R:");
   lcd.setCursor(0, 1);
   lcd.print("90  90  90");
   
 }
-void updateServosPosition(float [3]);
+void updateServosPosition(unsigned int [3]);
 
 void serialEvent()
 {
-  int angles[countServos];
+  unsigned int angles[countServos];
   angles[0]=readSerial('%');
   angles[1]=readSerial('&');
   angles[2]=readSerial('$');
@@ -68,7 +68,7 @@ void serialEvent()
 int readSerial(char stopper)
 {
   unsigned char temp='l';
-  float val=0;
+  unsigned int val=0;
   while(1)
     {
         if (Serial.available())
@@ -86,7 +86,7 @@ int readSerial(char stopper)
      } 
 }
 
-void updateServosPosition(int angles[])
+void updateServosPosition(unsigned int angles[])
 {
   for(int i=0; i<countServos; i++)
     servoMap[i].write(angles[i]);  
