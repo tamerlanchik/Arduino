@@ -11,7 +11,7 @@ import os
 import serial
 
 
-K=["Колено 1:", "Колено 2:", "Поворот:", "X1", "X2"]
+K=["X:", "Y:", "Z:", "X1", "X2"]
 N="Координата, мм:"
 sliderCount=3
 
@@ -33,10 +33,11 @@ class Connector():
         self.currentPort=1
         self.isConnectedFlag=True
         self.lastUpdateTime=time.time()
-        self.Coords=[50]*3
+        self.Coords=[150]*3
         self.Angles=[0]*3
         self.R1=50
         self.R2=85
+        self.logFile=open('calculatingAnglesLog.log', 'w')
     
     def connect_(self, e=-1):
         try:
@@ -47,7 +48,7 @@ class Connector():
                 
                 try: self.SERIAL.close()
                 except: pass
-                self.SERIAL=serial.Serial(self.portList[self.currentPort], 9600)
+                self.SERIAL=serial.Serial(self.portList[self.currentPort], 38400)
                 self.isConnectedFlag=True
                 return True
                 
@@ -81,8 +82,9 @@ class Connector():
                 #----------------------------------------
                 #вычисление горизонтального угла поворота
                 try:
-                    self.Angles[0]=math.atan( (y - L)/x )
-                except: print("Failed in math.atan((y-L)/x)")
+                    if x!=0.0:
+                        self.Angles[0]=math.pi+math.atan( (y - L)/x )
+                except: print("Failed in math.atan((y-L)/x)", y, L, x)
                 #angles[0]=0
                 
                 #----------------------------------------
@@ -133,12 +135,16 @@ class Connector():
                 l2 = z**2 + y**2
                 self.Angles[0]=int(self.Angles[0])
                 alpha = math.atan2(Y, Z)
-                self.Angles[1] = int(math.degrees( alpha ))
+                self.Angles[1] = int(math.pi+math.degrees( alpha ))
                 
-                beta = math.pi-math.acos( (R1**2 +R2**2 -l2)/(2*R1*R2) )
+                
+                beta=(R1**2 +R2**2 -l2)/(2*R1*R2)
+                print(beta, file=self.logFile)
+                beta = math.acos( beta )
                 self.Angles[2] = int(math.degrees(beta))
                 
                 #return angles
+                print(x, y, z, self.Angles, file=self.logFile) 
                 print(self.Angles)
             except: print("b")
         except: print("Error in calculatingAngles")
@@ -151,6 +157,7 @@ class Connector():
     def closeSerial(self):
         try:
             self.SERIAL.close()
+            self.logFile.close()
         except: print('Error in "closeSerial"')
 
 
@@ -160,7 +167,7 @@ class Connector():
 class Window(QMainWindow):
     
     def __init__(self):
-        self.sliderMaxValue=100
+        self.sliderMaxValue=300
         self.sliderPosition=[self.sliderMaxValue//2+self.sliderMaxValue*i for i in range(sliderCount)]
         super().__init__()
         self.controller=QWidget()
