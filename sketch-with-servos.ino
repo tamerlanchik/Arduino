@@ -31,34 +31,44 @@ void setup() {
   lcd.print("90  90  90");
   
 }
+void updateServosPosition(float [3]);
 
 void serialEvent()
 {
-  unsigned int port=readSerial('%');
-  unsigned int val=readSerial('$');
-  if (port<countServos)
-  {
-    if (val>180)
-      val=lastValues[port];
+  int angles[countServos];
+  angles[0]=readSerial('%');
+  angles[1]=readSerial('&');
+  angles[2]=readSerial('$');
+  
+
 
     
-    lastValues[port]=val;
-
-    val=constrain(val, minValueServo[port], maxValueServo[port]);
-    setServoToPosition(port, val);
     
-    lcd.setCursor(4*port, 1);
-    lcd.print("   ");
-    lcd.setCursor(4*port, 1);
-    lcd.print(val);
-  }
+
+    lcd.setCursor(0, 1);
+    lcd.print(F("              "));
+    
+    for(int i=0; i<countServos; i++)
+    {
+      if (angles[i]>180)
+        angles[i]=lastValues[i];
+
+      lastValues[i]=angles[i];
+      angles[i]=constrain(angles[i], minValueServo[i], maxValueServo[i]);
+
+      lcd.setCursor(i*4, 1);
+      lcd.print(angles[i]);
+
+    }
+      
+    updateServosPosition(angles);
   
     
 }
 int readSerial(char stopper)
 {
   unsigned char temp='l';
-  unsigned int val=0;
+  float val=0;
   while(1)
     {
         if (Serial.available())
@@ -76,9 +86,10 @@ int readSerial(char stopper)
      } 
 }
 
-void setServoToPosition(int numb, int angle)
+void updateServosPosition(int angles[])
 {
-   servoMap[numb].write(angle);  
+  for(int i=0; i<countServos; i++)
+    servoMap[i].write(angles[i]);  
 }
 
 void loop() {
