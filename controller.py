@@ -8,15 +8,23 @@ import os
 from core import Core
 from display_img import DisplayImg
 from dictionary import T
+import time
 
 styleFile=open('style.css', 'r')
 styleSheet=styleFile.read()
 styleFile.close()
 
+
+
 class Controller(QWidget):
+    changeAxisRangeSpinBoxSingleStep=5
+    changeAxisRangeSpinBoxMinWidth=50
+    controlGroupCurrentValueMaxWidth=30
     
     def __init__(self):
+        #self.Window=Window
         super().__init__()
+        self.portList, self.currentPort, self.portCount, self.serialSpeedCases, self.axisNumber, self.displaysNumber, self.legLenght, self.isConnectedFlag, self.axisRange=Core.getData(Core)
         self.setStyleSheet(styleSheet)
         
         self.mainBox=QVBoxLayout()
@@ -24,7 +32,7 @@ class Controller(QWidget):
         self.createSettingsGroup() #создать верхнее меню настроек
         self.createControlGroup()
         
-        self.createDisplayAreas(Core.displaysNumber)
+        self.createDisplayAreas(self.displaysNumber)
         
         self.displayAreasMainBox=QHBoxLayout()
         
@@ -33,20 +41,14 @@ class Controller(QWidget):
         self.mainBox.addWidget(self.controlGroupFrame)
         self.mainBox.addStretch(1)
         self.mainBox.addLayout(self.displayAreasBox)
-        #self.mainBox.addStretch(1)
         
-        self.main=QGroupBox(self)
-        self.main.setLayout(self.mainBox)
         self.setLayout(self.mainBox)
         
-        #self.statusBar().showMessage('opened')
-        
-        #self.setCentralWidget(self.main)
-        '''self.setWindowTitle(T.WINDOW_TITLE)
-        self.setWindowIcon(QIcon('icon.png'))
-        self.setGeometry(400, 200, 500, 300)
-        self.show()'''
-    
+        if __name__=='__main__':
+            self.setWindowTitle(T.WINDOW_TITLE)
+            self.setWindowIcon(QIcon('icon.png'))
+            self.setGeometry(400, 200, 500, 300)
+            self.show()    
     def createSettingsGroup(self):
         self.menuBox=QHBoxLayout(self)
                     
@@ -57,7 +59,7 @@ class Controller(QWidget):
         
         self.choosePortCombo=QComboBox(self)
         self.choosePortCombo.addItem(T.CONNECT_BUTTON_NOT_CONNECT)
-        self.choosePortCombo.addItems(Core.portList)
+        self.choosePortCombo.addItems(self.portList)
         self.choosePortCombo.activated[str].connect(self.changePort)
         
         self.choosePortLabelInfo=QLabel(T.CHOOSE_PORT_LABEL_INFO, self)
@@ -71,17 +73,14 @@ class Controller(QWidget):
         self.chooseSpeedAxisBox=QFormLayout(self)
         
         self.chooseSpeedCombo=QComboBox(self)
-        self.chooseSpeedCombo.addItems(list(map(str, Core.serialSpeedCases)))
+        self.chooseSpeedCombo.addItems(list(map(str, self.serialSpeedCases)))
         self.chooseSpeedCombo.activated[str].connect(self.changeSpeed)
         
         self.chooseAxisNumberText=QPushButton(T.CONNECT_BUTTON_NOT_CONNECT)
         self.chooseAxisNumberText.setCheckable(1)
         self.chooseAxisNumberText.setChecked(0)
         self.chooseAxisNumberText.setObjectName('chooseAxisNumberText')
-        #self.chooseAxisNumberText.setStyleSheet(self.styleSheet)
         self.chooseAxisNumberText.toggled.connect(self.disconnect)
-        
-        #self.chooseAxisNumberText.setFixedWidth(100)            
         
         self.chooseSpeedAxisBox.addRow(T.CHOOSE_SERIAL_SPEED, self.chooseSpeedCombo)
         self.chooseSpeedAxisBox.addRow(T.CONNECTING_STATE, self.chooseAxisNumberText)
@@ -95,22 +94,29 @@ class Controller(QWidget):
         
         self.setCoordRangeLabel=QLabel(T.SET_COORD_RANGE)
         
-        self.setCoordRangeLabels=[0]*Core.axisNumber
-        self.setCoordRangeTexts=[0]*Core.axisNumber
+        self.setCoordRangeLabels=[0]*self.axisNumber
+        self.setCoordRangeSpinBox=[0]*self.axisNumber
         
         self.setCoordRangeBoxLeft.addWidget(self.setCoordRangeLabel)
-        self.W=0
-        for i in range(Core.axisNumber):
+        
+        self.spinBoxSignalMapper=QSignalMapper(self)
+        
+        for i in range(self.axisNumber):
             self.setCoordRangeLabels[i]=QLabel(T.COORD_NAMES[i])
-            self.setCoordRangeTexts[i]=QSpinBox()
-            self.setCoordRangeTexts[i].setSingleStep(5)
-            self.setCoordRangeTexts[i].setRange(-300, 300)
-            self.setCoordRangeTexts[i].setMaximumWidth(40)
+            
+            self.setCoordRangeSpinBox[i]=QSpinBox()
+            self.setCoordRangeSpinBox[i].setSingleStep(self.changeAxisRangeSpinBoxSingleStep)
+            self.setCoordRangeSpinBox[i].setRange(0, self.axisRange[i]+100) #maxLegLenght + 100mm for experiments
+            self.setCoordRangeSpinBox[i].setMinimumWidth(self.changeAxisRangeSpinBoxMinWidth)
+            self.setCoordRangeSpinBox[i].setValue(self.axisRange[i])
+            
+            self.spinBoxSignalMapper.setMapping(self.setCoordRangeSpinBox[i], str(i))
+            self.setCoordRangeSpinBox[i].valueChanged[int].connect(self.spinBoxSignalMapper.map)
             
             self.setCoordRangeBoxRight.addWidget(self.setCoordRangeLabels[i])
-            self.setCoordRangeBoxRight.addWidget(self.setCoordRangeTexts[i])
+            self.setCoordRangeBoxRight.addWidget(self.setCoordRangeSpinBox[i])
             self.setCoordRangeBoxRight.addStretch(1)                
-        
+        self.spinBoxSignalMapper.mapped[str].connect(self.handleChangerRangeValue)
         self.setCoordRangeBox.addLayout(self.setCoordRangeBoxLeft)
         self.setCoordRangeBox.addLayout(self.setCoordRangeBoxRight)
         self.setCoordRangeBox.addStretch(1)
@@ -122,7 +128,6 @@ class Controller(QWidget):
         self.menuBox.addLayout(self.chooseSpeedAxisBox)
         self.menuBox.addStretch(1)
         self.menuBox.addLayout(self.setCoordRangeBox)
-        #self.menuBox.addStretch(1)
         
         self.menuBoxFrame.setLayout(self.menuBox)            
     
@@ -141,14 +146,16 @@ class Controller(QWidget):
         for i in range(3):
             self.controlGroupJoysticks[i]=QSlider(Qt.Horizontal)
             self.controlGroupJoysticks[i].setMinimumWidth(self.size().width()+200)
+            self.controlGroupJoysticks[i].setRange(self.axisRange[i]*(-1), self.axisRange[i])
+            
             self.controlGroupLayoutJoysticks.addRow(T.COORD_NAMES[i], self.controlGroupJoysticks[i])
             
-            self.slidersSignalMapper.setMapping( self.controlGroupJoysticks[i], str(i))
+            self.slidersSignalMapper.setMapping( self.controlGroupJoysticks[i], str(i) )
             
             self.controlGroupJoysticks[i].valueChanged[int].connect(self.slidersSignalMapper.map)
             
             self.controlGroupCurrentValue[i]=QLineEdit('0')
-            self.controlGroupCurrentValue[i].setMaximumWidth(50)
+            self.controlGroupCurrentValue[i].setMaximumWidth(self.controlGroupCurrentValueMaxWidth)
             self.controlGroupLayoutCurrentValue.addRow(T.CURRENT_POSITION_LABEL, self.controlGroupCurrentValue[i])
         
         self.slidersSignalMapper.mapped[str].connect(self.handleSliderValue)
@@ -174,44 +181,51 @@ class Controller(QWidget):
     
     #------SLOTS---------------------
     def changePort(self, port):
-        print('New port: '+port)
+        if port==T.CONNECT_BUTTON_NOT_CONNECT:
+            event=False
+            self.updateLabel(flag=self.isConnectedFlag)
+        else:
+            event=True
+            self.isConnectedFlag=Core.connect_(Core, self.portList.index(port))
+            self.updateLabel(port, self.isConnectedFlag)
         
     def changeSpeed(self, newSpeed):
-        print('New speed: '+newSpeed)
+        if __name__!='__main__':
+            self.Window.showInfo('Connectinh speed changed. Reconnecting...')
+        Core.connect_(Core)
         
     def disconnect(self):
         state=[T.CONNECT_BUTTON_NOT_CONNECT, T.CONNECT_BUTTON_CONNECTED]
-        z=int(self.chooseAxisNumberText.isChecked())
-        self.chooseAxisNumberText.setText(state[z])
+        currState=int(self.chooseAxisNumberText.isChecked())
+        ans=Core.changePortState(Core, currState)
+               
+        self.chooseAxisNumberText.setText(state[int(ans)])
+        
+        self.chooseAxisNumberText.setChecked(ans)
+            
+        self.updateLabel(flag=self.isConnectedFlag)
+        
+        if __name__!='__main__':
+            self.Window.showInfo(state[int(ans)])
+        
+    def handleChangerRangeValue(self, sender):
+        sender=int(sender)
+        value=self.setCoordRangeSpinBox[sender].value()
+        self.axisRange[sender]=value
+        self.controlGroupJoysticks[sender].setRange(value*(-1), value)
+        if __name__!='__main__':
+            self.Window.showInfo('Range on '+str(T.COORD_NAMES[sender])+' changed')
         
     def handleSliderValue(self, sender):
-        value=self.controlGroupJoysticks[int(sender)].value()
-        print(sender, str(value))
-        self.controlGroupCurrentValue[int(sender)].setText(str(value))
+        sender=int(sender)
+        value=self.controlGroupJoysticks[sender].value()
+        self.controlGroupCurrentValue[sender].setText(str(value))
         
-    def handleValue(self, value, sender):
-        try:
-            sender=value//(self.sliderMaxValue)
-            val=value-sender*self.sliderMaxValue-self.sliderMaxValue/2
-            self.sliderPosition[sender]=val
-            self.gui.sliderBoard[sender][3].setText(str(val))
-            Core.updateCoords(sender, val)
-            self.statusBar().showMessage(Core.sendPosition())
-        except: self.statusBar().showMessage('An ERROR in "handleValue"')
+        angles=Core.calculatingAngles(Core, sender, value)
+        print(angles)
         
-        
-    def updatePort(self, port):
-        try:
-            if port=='Не выбрано':
-                Core.closeSerial()
-                self.updateLabel()
-    
-            else:
-                flag=Core.connect_(port)
-                self.updateLabel(port, flag)
-        except: self.statusBar().showMessage('An ERROR in "updatePort"')
-                
-                 
+        #for i in range(self.displaysNumber):
+        #   self.displayAreas[i].redrawArea(self.displayAreas[i], angles)
         
     def updateLabel(self, port=-1, flag=False):
         try:
@@ -219,14 +233,14 @@ class Controller(QWidget):
             
                 if (flag==True):
                         
-                    self.j.setText('<font color="green">Arduino успешно подключено к порту '+port+'</font>')
+                    self.choosePortLabelInfo.setText('<font color="green">'+T.SUCCESFULLY_CONNECTED_TO_THE_PORT+' <b>'+port+'</b></font>')
                                    
                         
                 else:
-                    self.j.setText('<FONT COLOR="red">Не удалось подключиться к порту '+port+'</font>')
+                    self.choosePortLabelInfo.setText('<FONT COLOR="red">'+T.CANT_CONNECT_TO_THIS_PORT+' <b>'+port+'</b></font>')
             else:
-                self.j.setText('<font color="blue">Не подключено</font>')
-        except: self.statusBar().showMessage('An ERROR in "updateLabel"')
+                self.choosePortLabelInfo.setText(T.CHOOSE_PORT_LABEL_INFO)
+        except: pass
                        
 
             
@@ -234,9 +248,8 @@ class Controller(QWidget):
         Core.closeSerial()
 
 
-    
-    
-'''app = QApplication(sys.argv)
-core=Core()
-contr=Controller()
-sys.exit(app.exec_())'''
+if __name__=='__main__':
+    app = QApplication(sys.argv)
+    core=Core()
+    contr=Controller()
+    sys.exit(app.exec_())
