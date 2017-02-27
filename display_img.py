@@ -6,6 +6,11 @@ class DisplayImg(QWidget):
     
     def __init__(self, size, numb):
         super().__init__()
+        
+        #-----Служебная информация---------
+        #self.legLenght=legLenght
+        #----------------------------------
+        self.size=size
         self.setFixedHeight(size+1)
         self.setFixedWidth(size+1)
         Pal=QPalette()
@@ -13,9 +18,19 @@ class DisplayImg(QWidget):
         self.setAutoFillBackground(True)
         self.setPalette(Pal)
         self.numb=numb
+        
         self.doesShowWayFlag=False
         self.doesShowCirclesFlag=False
         self.doesShowLegsFlag=False
+        self.K=21
+        if self.numb==0:
+            self.coordCenter=(self.width()//2, self.height()-self.K)
+        elif self.numb==1:
+            self.coordCenter=(self.width()-self.K, self.height()//2)
+        try:  
+            self.painter=QPainter(self)           
+        except:
+            print('Cant init display '+str(self.numb))
 
     
     def createControls(self):
@@ -44,12 +59,13 @@ class DisplayImg(QWidget):
         return self.mainGroupBox
         
     def paintEvent(self, e):
-        painter=QPainter(self)
-        painter.begin(self)
-        self.drawGrid(painter)
-        #self.showCircles()
-        painter.end()
-        
+        self.painter.begin(self)
+        #self.painter.translate(QPoint(*self.coordCenter)) 
+        self.drawGrid(self.painter)
+        self.painter.end()
+    
+    def drawTest(self, painter):
+        painter.drawLine(0, 0, 100, 100)
     def drawGrid(self, painter):
         painter.setPen(Qt.gray)
         for i in range(0, self.width()+2, 10):
@@ -75,7 +91,11 @@ class DisplayImg(QWidget):
         painter.drawEllipse(QPoint(self.width()-21, self.height()//2), 2, 2) 
         painter.setBrush(Qt.NoBrush)
         painter.drawEllipse(QPoint(self.width()-21, self.height()//2), 100, 100)
-        
+    
+    '''def showLegs(self, painter, angles):
+        painter.setPen(Qt.green)
+        for i in range(3):
+            print('a')'''
     #----SLOTS----------------------
     def doesDrawCircles(self, flag):
         self.doesShowCirclesFlag=bool(flag)
@@ -89,3 +109,5 @@ class DisplayImg(QWidget):
     def clearDisplay(self):
         self.doesShowWayFlag=False
         self.update()
+    def redrawArea(self, angles):
+        print('Area is redrawong')
