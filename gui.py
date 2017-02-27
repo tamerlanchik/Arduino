@@ -8,11 +8,6 @@ import os
 from controller import Controller
 
 
-sliderCount=5
-
-setPortText="Текущий порт:"
-ERR_openSerial='Не удалось открыть порт.'
-
 class Window(QMainWindow):
     sliderMaxValue=300
     sliderPosition=0 
@@ -20,7 +15,7 @@ class Window(QMainWindow):
         super().__init__()
         try:            
             self.controller=Controller()
-            self.statusBar().showMessage('Открыто')
+            self.statusBar().showMessage('Opened')
             self.setCentralWidget(self.controller)
 
     
@@ -32,4 +27,10 @@ class Window(QMainWindow):
             self.setWindowIcon(QIcon('icon.png'))
             self.show()
         except:
-            print('Init i error')
+            print('Init error')
+    
+    def showInfo(self, info_str):
+        try:
+            self.statusBar().showMessage(info_str)
+        except:
+            print('Couldn\'t update the statusBar')
