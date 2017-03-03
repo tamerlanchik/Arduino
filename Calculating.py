@@ -1,21 +1,28 @@
 import math as m
-
-r=4
-R=6
+R1=6
+R2=4
 x, y=(6, 5)
-x2, y2=(13, 11)
-
-x1, y1=(0, 0)
-x2, y2=(x2-x, y2-y)
-L2=(x2-x1)**2+(y2-y1)**2
-
-X=(r*r+R*R-L2)/(2*r*R)
-t=m.atan( (y2-y1)/(x2-x1) )
-if t<0: t=(m.pi+t)*(-1)
-h=(r*R*m.sin(m.acos(X)))/(L2**0.5)
-bet= abs(t+ m.asin(h/(L2**0.5)))
-gamm= bet -m.pi+m.acos(X)
-Ax=x1-r*m.cos(bet)+x
-Ay=y1+r*m.sin(bet)+y
-print("bet: ", m.degrees(bet), " gamm: ", m.degrees(gamm), " L²: ", L2, " X: ", X, " T: ", m.degrees(t), " Ang X: ", m.degrees(m.acos(X)))
-print(Ax, Ay)
+x1, y1=(13-x, 11-y)
+#---------
+t=(R1**2-R2**2-x1**2-y1**2)/(-2)
+a=x1**2+y1**2
+b=2*t*y1
+c=t**2-(R2**2)*(x1**2)
+D=b**2-4*a*c
+print("t, a, b, c", t, a, b, c)
+if D<0: print("Does not intersect ", D)
+else:
+    if D==0:
+        Y1=Y2=b/(2*a)
+    else:
+        Y1 = (b+D**0.5)/(2*a)
+        Y2 = (b-D**0.5)/(2*a)
+    
+    X1=(t-Y1*y1)/x1
+    X2=(t-Y2*y1)/x1
+    X1+=x
+    X2+=x
+    Y1+=y
+    Y2+=y    	    
+    print((X1, Y1), (X2, Y2))
+    print(a*Y1*Y1-b*Y1+c)
