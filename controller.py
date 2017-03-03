@@ -9,6 +9,7 @@ from core import Core
 from display_img import DisplayImg
 from dictionary import T
 import time
+import math
 
 styleFile=open('style.css', 'r')
 styleSheet=styleFile.read()
@@ -21,10 +22,11 @@ class Controller(QWidget):
     changeAxisRangeSpinBoxMinWidth=50
     controlGroupCurrentValueMaxWidth=30
     
+    
     def __init__(self):
         #self.Window=Window
         super().__init__()
-        self.portList, self.currentPort, self.portCount, self.serialSpeedCases, self.axisNumber, self.displaysNumber, self.legLenght, self.isConnectedFlag, self.axisRange=Core.getData(Core)
+        self.portList, self.Coords, self.currentPort, self.portCount, self.serialSpeedCases, self.axisNumber, self.displaysNumber, self.legLenght, self.isConnectedFlag, self.axisRange=Core.getData(Core)
         self.setStyleSheet(styleSheet)
         
         self.mainBox=QVBoxLayout()
@@ -44,6 +46,8 @@ class Controller(QWidget):
         
         self.setLayout(self.mainBox)
         
+        data=core.hello()
+        self.displayAreas[0].hello(data)
         if __name__=='__main__':
             self.setWindowTitle(T.WINDOW_TITLE)
             self.setWindowIcon(QIcon('icon.png'))
@@ -214,16 +218,16 @@ class Controller(QWidget):
         self.axisRange[sender]=value
         self.controlGroupJoysticks[sender].setRange(value*(-1), value)
         if __name__!='__main__':
-            self.Window.showInfo('Range on '+str(T.COORD_NAMES[sender])+' changed')
+            Window.showInfo('Range on '+str(T.COORD_NAMES[sender])+' changed')
         
     def handleSliderValue(self, sender):
         sender=int(sender)
         value=self.controlGroupJoysticks[sender].value()
         self.controlGroupCurrentValue[sender].setText(str(value))
         
-        angles=Core.calculatingAngles(Core, sender, value)
-        print(angles)
-        
+        coords, P, Pa, angles=Core.calculatingAngles(Core, sender, value)
+        print("Coords: ", coords, Pa, math.degrees(angles[0]))
+        self.displayAreas[0].redrawArea(coords, P, Pa)
         #for i in range(self.displaysNumber):
         #   self.displayAreas[i].redrawArea(self.displayAreas[i], angles)
         
@@ -245,9 +249,39 @@ class Controller(QWidget):
 
             
     def closeEvent(self, event):
-        Core.closeSerial()
+        try:
+            Core.closeSerial()
+        except:
+            print("Cannot close the Serial")
 
 
+
+class Window(QMainWindow):
+    sliderMaxValue=300
+    sliderPosition=0 
+    def __init__(self):
+        super().__init__()
+        try:            
+            self.controller=Controller()
+            self.statusBar().showMessage('Opened')
+            self.setCentralWidget(self.controller)
+
+    
+            qr = self.frameGeometry()
+            cp = QDesktopWidget().availableGeometry().center()
+            qr.moveCenter(cp)
+            self.move(qr.topLeft())
+            self.setWindowTitle('Manip arduino')
+            self.setWindowIcon(QIcon('icon.png'))
+            self.show()
+        except:
+            print('Init error')
+    
+    def showInfo(self, info_str):
+        try:
+            self.statusBar().showMessage(info_str)
+        except:
+            print('Couldn\'t update the statusBar')
 if __name__=='__main__':
     app = QApplication(sys.argv)
     core=Core()
