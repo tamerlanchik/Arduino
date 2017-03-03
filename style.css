@@ -20,7 +20,7 @@ QGroupBox
 {
 	
 	background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #FA2A2A, stop: 1 #B81414);
-	color: #FFF
+	color: #FFF;
 }
 
 .QPushButton#chooseAxisNumberText:checked
@@ -28,6 +28,26 @@ QGroupBox
 	background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #00FF00, stop: 1 #0ECC0E);
 	color: #000;
 }
+.QPushButton#chooseAxisNumberText:hover:!checked
+{
+	background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 2, stop: 0 #C70C0C, stop: 1 #750707);
+	color: #FFF;
+}
+.QPushButton#chooseAxisNumberText:pressed:!checked
+{
+	background-color: #750707;
+	color: #FFF;
+}
+/*.QPushButton#chooseAxisNumberText:pressed:checked
+{
+	background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #16D10D, stop: 1 #14AD0C);
+	color: #000;
+}
+.QPushButton#chooseAxisNumberText:pressed:!checked
+{
+	background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 2, stop: 0 #C70C0C, stop: 1 #750707);
+	color: #FFF;
+}*/
 
 /*.QComboBox
 {
@@ -47,4 +67,23 @@ QSlider::handle
 	height: 10px;
 	width: 10px;
 	margin: -10px, -10px;
+}
+QSlider::handle:pressed
+{
+	background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #00FF00, stop: 1 #14AD0C);
+}
+QSlider::handle:hover:!pressed
+{
+	background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #D1D160, stop: 1 #858548);
+}
+QSlider::groove:pressed
+{
+	background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #00FF00, stop: 1 #14AD0C);
+
+}
+QSlider::groove:hover:!pressed
+{
+	background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #D1D160, stop: 1 #858548);
+	height: 3px;
+	
 }
