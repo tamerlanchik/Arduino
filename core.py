@@ -10,19 +10,21 @@ class Core():
     currentPort=1
     displaysNumber=2
     isConnectedFlag=True
-    legLenght=[50, 80, 30]
+    legLenght=[50, 50, 30]
     currentSpeed=2
-    Coords=[150]*3
+    Coords=[-100]*3
+    preCoords=[150]*3
+    preAngles=[0]*3
     Angles=[0]*3
-    R1=50
-    R2=85
     axisRange=[max(legLenght)*axisNumber]*axisNumber
     
     def __init__(self):
         self.lastUpdateTime=time.time()
         
+    def hello(self):
+        return(self.legLenght, self.Coords)
     def getData(self):
-        ans=(self.portList, self.currentPort, self.portCount, self.serialSpeedCases, self.axisNumber, self.displaysNumber, self.legLenght, self.isConnectedFlag, self.axisRange)
+        ans=(self.portList, self.Coords, self.currentPort, self.portCount, self.serialSpeedCases, self.axisNumber, self.displaysNumber, self.legLenght, self.isConnectedFlag, self.axisRange)
         return ans
     
     def connect_(self, e=-1):
@@ -61,80 +63,88 @@ class Core():
         try:
             try:
                 self.Coords[sender]=value
-            except: print('Err in update coords')
+                x1, y1=self.Coords[0], self.Coords[1]
+                R1=self.legLenght[0]
+                R2=self.legLenght[1]
+            except: print("Cannot change the destination coord")
+            #---------
+            D=-1
+            print("Start calculating")
             try:
-                x=self.Coords[0]
-                y=self.Coords[1]
-                z=self.Coords[2]
+                try:
+                    t=(R1**2-R2**2-x1**2-y1**2)/(-2)
+                    a=x1**2+y1**2
+                    b=2*t*y1
+                    c=t**2-(R2**2)*(x1**2)
+                    D=b**2-4*a*c
+                    print("t, a, b, c, x1, y1", t, a, b, c, x1, y1)
+                except:
+                    print("Cannot prepare A, B, C")
+                if D<0 and a!=0:
+                    print("Does not intersect ", D)
+                    return(self.Coords, (0, 0), (0, 0), (0, 0))
+                else:
+                    if D==0:
+                        Y1, Y2=b/(2*a), b/(2*a)
+                        print("D=0")
+                    else:
+                        Y1 = (b+D**0.5)/(2*a)
+                        Y2 = (b-D**0.5)/(2*a)
+                    if x1==0:
+                        X1=x1
+                        X2=x1
+                    else:
+                        X1=(t-Y1*y1)/x1
+                        X2=(t-Y2*y1)/x1 	    
+                    print((X1, Y1), (X2, Y2))
+            except: 
+                print("An error during calculating coords; D ", D, X1, Y1, X2, Y2)
+            try:
+                '''if abs(self.preCoords[0]-X1)<abs(self.preCoords[0]-X2):
+                    self.preCoords=[X1, Y1, 0]
+                    X, Y=X1, Y1
+                    #return((X1, Y1))
+                else:
+                    self.preCoords=[X2, Y2, 0]
+                    X, Y=X2, Y2
+                    #return((X2, Y2))'''
+                a1=math.asin(Y1/R1)
+                a2=math.asin(Y2/R1)
+                if X1<0:
+                    a1=math.pi-a1
+                if X2<0:
+                    a2=math.pi-a2
+                if abs(self.preAngles[0]-a1)<abs(self.preAngles[0]-a2):
+                    alpha=a1
+                    X=X1
+                    Y=Y1
+                else:
+                    alpha=a2
+                    X=X2
+                    Y=Y2
+                self.preAngles[0]=alpha
             except:
-                print('Error in xyz')
-                
+                print("Cannot send coords")
             try:
-                if x!=0:
-                    self.Angles[0]=math.pi//2+math.atan(y/x)
-                else:
-                    self.Angles[0]=math.pi/2
-            except: print("Failed in math.atan((y-L)/x)", y, x, self.Angles)
+                '''alpha=math.asin(Y/R1)
+                if X<0:
+                    alpha=math.pi-alpha'''
+                beta=math.atan( (self.Coords[1]-Y)/R2)
+                XA=R1*math.cos(alpha)
+                YA=R1*math.sin(alpha)
+                return(self.Coords, (X, Y), (XA, YA), (alpha, beta))
+            except:
+                print("Error in send data")
+                return(self.Coords, (0, 0), (0, 0), (0, 0))
+                
             
-            try:
-                try:
-                    self.R1*=math.cos(self.Angles[0])
-                    self.R2*=math.cos(self.Angles[0])
-                except: print("2"); print(str(self.R1), str(self.R2), str(self.Angles[0]))
-                
-                try:
-                    self.Angles[0]=math.degrees(self.Angles[0])
-                except: print("4")
-                
-                try:
-                    e=(self.R2**2 - self.R1**2 - z**2 - y**2) / (-2)
-                except: print("3")
-                
-            except: print("1")
-            
-            try:
-                a=y**2 + z**2
-                b=(-2)*e*y
-                c=e**2 - (self.R1**2)*(z**2)
-        
-                D=b**2-4*a*c
-            except: print('Error in calculating coeffs')
-            
-            try:
-                if D<0: 
-                    print('Не пересекаются')
-                    return [0]*self.axisNumber
-                
-                elif D==0:
-                    Y=(-b)/(2*a)
-                    
-                elif D>0:
-                    Y1=(-b + D**0.5) / (2*a)
-                    Y2=(-b - D**0.5) / (2*a)
-                    
-                    Y=max(Y1, Y2)
-                
-                else:
-                    print('Error')
-                    return [0]*self.axisNumber
-                    
-                Z = (e - Y*y) / z
-                
-                l2 = z**2 + y**2
-                self.Angles[0]=int(self.Angles[0])
-                alpha = math.atan2(Y, Z)
-                self.Angles[1] = int(math.pi+math.degrees( alpha ))
-                
-                
-                beta=(self.R1**2 +self.R2**2 -l2)/(2*self.R1*self.R2)
-                beta = math.acos( beta )
-                self.Angles[2] = int(math.degrees(beta))
-                return self.Angles
-            except: print("b")
         except: 
             print("Error in calculatingAngles")
-            return [0]*self.axisNumber
-                    
+            return(self.Coords, (0, 0), (0, 0), (0, 0))
+        '''try:
+            self.Coords[sender]=value
+            return self.Coords
+        except: print("Cannot change the destination coord")'''        
                     
     def updateCoords(self, numb, coord):
         self.Coords[numb]=coord
