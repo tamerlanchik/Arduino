@@ -7,7 +7,7 @@ class DisplayImg(QWidget):
     def __init__(self, size, numb):
         super().__init__()
         
-        #-----Служебная информация---------
+        #-----РЎР»СѓР¶РµР±РЅР°СЏ РёРЅС„РѕСЂРјР°С†РёСЏ---------
         #self.legLenght=legLenght
         #----------------------------------
         self.size=size
@@ -20,13 +20,19 @@ class DisplayImg(QWidget):
         self.numb=numb
         
         self.doesShowWayFlag=False
-        self.doesShowCirclesFlag=False
+        self.doesShowCirclesFlag=True
         self.doesShowLegsFlag=False
         self.K=21
+        self.crossP=[0, 0]
+        self.legLenghts=[0]*3
+        self.Coords=[0]*3
+        self.test=[0, 0]
         if self.numb==0:
-            self.coordCenter=(self.width()//2, self.height()-self.K)
+            #self.coordCenter=(self.width()//2, self.height()-self.K)
+            self.coordCenter=(150, 150)
         elif self.numb==1:
-            self.coordCenter=(self.width()-self.K, self.height()//2)
+            #self.coordCenter=(self.width()-self.K, self.height()//2)
+            self.coordCenter=(100, 230)
         try:  
             self.painter=QPainter(self)           
         except:
@@ -84,18 +90,32 @@ class DisplayImg(QWidget):
             
         if self.doesShowCirclesFlag==True:
             self.showCircles(painter)
-            
+        self.showLegs(painter)
+    
+    def hello(self, data):
+        self.legLenghts=data[0]
+        self.Coords=data[1]
+        self.update()
     def showCircles(self, painter):
         painter.setPen(Qt.red)
+        self.painter.translate(QPoint(*self.coordCenter))
         painter.setBrush(Qt.red)
-        painter.drawEllipse(QPoint(self.width()-21, self.height()//2), 2, 2) 
+        painter.drawEllipse(QPoint(self.Coords[0], self.Coords[1]), 2, 2) 
         painter.setBrush(Qt.NoBrush)
-        painter.drawEllipse(QPoint(self.width()-21, self.height()//2), 100, 100)
-    
-    '''def showLegs(self, painter, angles):
-        painter.setPen(Qt.green)
-        for i in range(3):
-            print('a')'''
+        painter.drawEllipse(QPoint(self.Coords[0], self.Coords[1]), self.legLenghts[1], self.legLenghts[1])
+        
+        painter.setBrush(Qt.red)
+        painter.drawEllipse(QPoint(0, 0), 2, 2) 
+        painter.setBrush(Qt.NoBrush)
+        painter.drawEllipse(QPoint(0, 0), self.legLenghts[0], self.legLenghts[0]) 
+        
+        painter.setBrush(Qt.green)
+        painter.drawEllipse(QPoint(self.crossP[0], self.crossP[1]), 2, 2)
+        
+        painter.setBrush(Qt.blue)
+        painter.drawEllipse(QPoint(self.test[0], self.test[1]), 3, 3)         
+    def showLegs(self, painter):
+        painter.drawLine(0, 0, self.crossP[0], self.crossP[1])
     #----SLOTS----------------------
     def doesDrawCircles(self, flag):
         self.doesShowCirclesFlag=bool(flag)
@@ -109,5 +129,9 @@ class DisplayImg(QWidget):
     def clearDisplay(self):
         self.doesShowWayFlag=False
         self.update()
-    def redrawArea(self, angles):
-        print('Area is redrawong')
+    def redrawArea(self, coords, point, pointA):
+        #print("Taken: ", coords, point)
+        self.Coords=coords
+        self.crossP=pointA
+        self.test=point
+        self.update()
