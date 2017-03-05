@@ -14,18 +14,46 @@ import math
 styleFile=open('style.css', 'r')
 styleSheet=styleFile.read()
 styleFile.close()
+class Window(QMainWindow):
+    sliderMaxValue=300
+    sliderPosition=0 
+    def __init__(self):
+        super().__init__()
+        try:            
+            self.controller=Controller(self)
+            self.statusBar().showMessage('Opened')
+            self.setCentralWidget(self.controller)
 
-
-
+    
+            qr = self.frameGeometry()
+            cp = QDesktopWidget().availableGeometry().center()
+            qr.moveCenter(cp)
+            self.move(qr.topLeft())
+            self.setWindowTitle('Manip arduino')
+            self.setWindowIcon(QIcon('icon.png'))
+            self.show()
+        except:
+            print('Init error')
+    
+    def showInfo(self, info_str):
+        try:
+            text = ''
+            for i in info_str:
+                text = text + str(i) + '   '
+            self.statusBar().showMessage(text)
+        except:
+            print('Couldn\'t update the statusBar')
 class Controller(QWidget):
     changeAxisRangeSpinBoxSingleStep=5
     changeAxisRangeSpinBoxMinWidth=50
     controlGroupCurrentValueMaxWidth=30
     
     
-    def __init__(self):
-        #self.Window=Window
+    def __init__(self,  Window):
+        self.Window=Window
+        self.core =Core()
         super().__init__()
+        
         self.portList, self.Coords, self.currentPort, self.portCount, self.serialSpeedCases, self.axisNumber, self.displaysNumber, self.legLenght, self.isConnectedFlag, self.axisRange=Core.getData(Core)
         self.setStyleSheet(styleSheet)
         
@@ -46,13 +74,8 @@ class Controller(QWidget):
         
         self.setLayout(self.mainBox)
         
-        data=core.hello()
+        data= self.core.hello()
         self.displayAreas[0].hello(data)
-        if __name__=='__main__':
-            self.setWindowTitle(T.WINDOW_TITLE)
-            self.setWindowIcon(QIcon('icon.png'))
-            self.setGeometry(400, 200, 500, 300)
-            self.show()    
     def createSettingsGroup(self):
         self.menuBox=QHBoxLayout(self)
                     
@@ -151,6 +174,7 @@ class Controller(QWidget):
             self.controlGroupJoysticks[i]=QSlider(Qt.Horizontal)
             self.controlGroupJoysticks[i].setMinimumWidth(self.size().width()+200)
             self.controlGroupJoysticks[i].setRange(self.axisRange[i]*(-1), self.axisRange[i])
+            self.controlGroupJoysticks[i].setValue(self.Coords[i])
             
             self.controlGroupLayoutJoysticks.addRow(T.COORD_NAMES[i], self.controlGroupJoysticks[i])
             
@@ -158,7 +182,7 @@ class Controller(QWidget):
             
             self.controlGroupJoysticks[i].valueChanged[int].connect(self.slidersSignalMapper.map)
             
-            self.controlGroupCurrentValue[i]=QLineEdit('0')
+            self.controlGroupCurrentValue[i]=QLineEdit(str(self.controlGroupJoysticks[i].value()))
             self.controlGroupCurrentValue[i].setMaximumWidth(self.controlGroupCurrentValueMaxWidth)
             self.controlGroupLayoutCurrentValue.addRow(T.CURRENT_POSITION_LABEL, self.controlGroupCurrentValue[i])
         
@@ -176,7 +200,7 @@ class Controller(QWidget):
             displayAreaBox=QGroupBox(T.DISPLAY_AREA_HEADER[i])
             ttt=QHBoxLayout()
             
-            self.displayAreas[i]=DisplayImg(300, i)
+            self.displayAreas[i]=DisplayImg(300, i,  self.Coords,  self.legLenght)
             
             ttt.addWidget(self.displayAreas[i])
             ttt.addWidget(self.displayAreas[i].createControls())
@@ -185,6 +209,7 @@ class Controller(QWidget):
     
     #------SLOTS---------------------
     def changePort(self, port):
+        self.Window.showInfo("Port changed")
         if port==T.CONNECT_BUTTON_NOT_CONNECT:
             event=False
             self.updateLabel(flag=self.isConnectedFlag)
@@ -218,18 +243,24 @@ class Controller(QWidget):
         self.axisRange[sender]=value
         self.controlGroupJoysticks[sender].setRange(value*(-1), value)
         if __name__!='__main__':
-            Window.showInfo('Range on '+str(T.COORD_NAMES[sender])+' changed')
+            self.Window.showInfo('Range on '+str(T.COORD_NAMES[sender])+' changed')
         
     def handleSliderValue(self, sender):
         sender=int(sender)
         value=self.controlGroupJoysticks[sender].value()
         self.controlGroupCurrentValue[sender].setText(str(value))
         
-        coords, P, Pa, angles=Core.calculatingAngles(Core, sender, value)
-        print("Coords: ", coords, Pa, math.degrees(angles[0]))
-        self.displayAreas[0].redrawArea(coords, P, Pa)
-        #for i in range(self.displaysNumber):
-        #   self.displayAreas[i].redrawArea(self.displayAreas[i], angles)
+        data = self.core.calculatingAngles(sender, value)
+        self.Window.showInfo(data)
+        if type(data[0]) != str:
+            Coords,  cA, cB, angles = data
+            self.displayAreas[0].redrawArea(cA,  cB)
+            self.displayAreas[1].redrawArea(cA,  cB)
+        else:
+            #self.Window.showInfo(("Error",  data[1],  'a'))
+            self.displayAreas[0].redrawArea(cB = data[1],  err = True)
+            self.displayAreas[1].redrawArea(cB = data[1],  err = True)
+        
         
     def updateLabel(self, port=-1, flag=False):
         try:
@@ -252,38 +283,14 @@ class Controller(QWidget):
         try:
             Core.closeSerial()
         except:
-            print("Cannot close the Serial")
-
-
-
-class Window(QMainWindow):
-    sliderMaxValue=300
-    sliderPosition=0 
-    def __init__(self):
-        super().__init__()
-        try:            
-            self.controller=Controller()
-            self.statusBar().showMessage('Opened')
-            self.setCentralWidget(self.controller)
-
+            self.Window.showInfo("Cannot close the Serial")
     
-            qr = self.frameGeometry()
-            cp = QDesktopWidget().availableGeometry().center()
-            qr.moveCenter(cp)
-            self.move(qr.topLeft())
-            self.setWindowTitle('Manip arduino')
-            self.setWindowIcon(QIcon('icon.png'))
-            self.show()
-        except:
-            print('Init error')
-    
-    def showInfo(self, info_str):
-        try:
-            self.statusBar().showMessage(info_str)
-        except:
-            print('Couldn\'t update the statusBar')
+
+
+
+
+
 if __name__=='__main__':
     app = QApplication(sys.argv)
-    core=Core()
-    contr=Controller()
+    gui = Window()
     sys.exit(app.exec_())
