@@ -2,6 +2,11 @@
 import serial
 import time
 import math
+def sign(x):
+    if x >= 0:
+        return 1
+    else:
+        return -1
 class Core():
     portCount=4
     portList=['COM'+str(i) for i in range(1, portCount+1)]
@@ -12,7 +17,7 @@ class Core():
     isConnectedFlag=True
     legLenght=[50, 50, 30]
     currentSpeed=2
-    Coords=[-100]*3
+    Coords=[1,  -70,  -100]
     preCoords=[150]*3
     preAngles=[0]*3
     Angles=[0]*3
@@ -66,48 +71,53 @@ class Core():
                 x1, y1=self.Coords[0], self.Coords[1]
                 R1=self.legLenght[0]
                 R2=self.legLenght[1]
-            except: print("Cannot change the destination coord")
+            except: return("Cannot change the destination coord", self.Coords)
             #---------
             D=-1
-            print("Start calculating")
             try:
+                try:
+                    print(self.Coords)
+                    if self.Coords[2] <= (R1 + R2):
+                        #self.Coords[1] = ( (R1 + R2) ** 2 - self.Coords[2] ** 2 ) ** 0.5
+                        teta = math.atan2(self.Coords[2],  self.Coords[0])
+                        #ZB = (R1 + R2) * math.sin(teta)
+                    else:
+                        r = 1 / 0
+                except:
+                    return("Cannot prepare teta",  self.Coords)
                 try:
                     t=(R1**2-R2**2-x1**2-y1**2)/(-2)
                     a=x1**2+y1**2
                     b=2*t*y1
                     c=t**2-(R2**2)*(x1**2)
                     D=b**2-4*a*c
-                    print("t, a, b, c, x1, y1", t, a, b, c, x1, y1)
+                    #print("t, a, b, c, x1, y1", t, a, b, c, x1, y1)
                 except:
-                    print("Cannot prepare A, B, C")
+                    return ("Cannot prepare A, B, C",  self.Coord)
                 if D<0 and a!=0:
-                    print("Does not intersect ", D)
-                    return(self.Coords, (0, 0), (0, 0), (0, 0))
+                    #print("Does not intersect ", D)
+                    return("Does not intersect ",  self.Coords)
                 else:
                     if D==0:
                         Y1, Y2=b/(2*a), b/(2*a)
-                        print("D=0")
                     else:
                         Y1 = (b+D**0.5)/(2*a)
                         Y2 = (b-D**0.5)/(2*a)
                     if x1==0:
-                        X1=x1
-                        X2=x1
+                        if R1 < Y1 or R1 < Y2:
+                            print("Error-2",  self.Coords)
+                            return("Does not intersect (2)",  self.Coords)
+                        else:
+                            X1 = (R1 ** 2 - Y1 ** 2) ** 0.5
+                            X2 = -(R1 ** 2 - Y1 ** 2) ** 0.5
+                            print("aaa",  X1,  X2)
                     else:
                         X1=(t-Y1*y1)/x1
                         X2=(t-Y2*y1)/x1 	    
-                    print((X1, Y1), (X2, Y2))
+                    print(self.Coords,  (X1, Y1), (X2, Y2),  a,  b,  c)
             except: 
-                print("An error during calculating coords; D ", D, X1, Y1, X2, Y2)
+                return(("An error during calculating coords; D ", D, X1, Y1, X2, Y2))
             try:
-                '''if abs(self.preCoords[0]-X1)<abs(self.preCoords[0]-X2):
-                    self.preCoords=[X1, Y1, 0]
-                    X, Y=X1, Y1
-                    #return((X1, Y1))
-                else:
-                    self.preCoords=[X2, Y2, 0]
-                    X, Y=X2, Y2
-                    #return((X2, Y2))'''
                 a1=math.asin(Y1/R1)
                 a2=math.asin(Y2/R1)
                 if X1<0:
@@ -123,28 +133,33 @@ class Core():
                     X=X2
                     Y=Y2
                 self.preAngles[0]=alpha
+                beta=math.asin( (self.Coords[1]-Y)/R2)
+                if self.Coords[0] - X < 0:
+                    beta = math.pi - beta
             except:
-                print("Cannot send coords")
+                return("Cannot calc coords",  self.Coords)
             try:
-                '''alpha=math.asin(Y/R1)
-                if X<0:
-                    alpha=math.pi-alpha'''
-                beta=math.atan( (self.Coords[1]-Y)/R2)
                 XA=R1*math.cos(alpha)
                 YA=R1*math.sin(alpha)
-                return(self.Coords, (X, Y), (XA, YA), (alpha, beta))
+                XB =  XA + R2 * math.cos(beta)
+                YB =  YA + R2 * math.sin(beta)
+                
+                XA = round(XA,  2)
+                YA = round(YA,  2)
+                XB = round(XB,  2)
+                YB = round(YB,  2)
+                #ZB = round(ZB,  2)
+                alpha = round(alpha,  2)
+                beta = round(beta,  2)
+                teta = round(teta,  2)
+                self.Angles = [alpha,  beta,  teta]
+                return((self.Coords, (XA, YA,  0), (XB,  YB,  0),  (alpha, beta, teta)))
             except:
-                print("Error in send data")
-                return(self.Coords, (0, 0), (0, 0), (0, 0))
+                return("Error in send data",  self.Coords)
                 
             
         except: 
-            print("Error in calculatingAngles")
-            return(self.Coords, (0, 0), (0, 0), (0, 0))
-        '''try:
-            self.Coords[sender]=value
-            return self.Coords
-        except: print("Cannot change the destination coord")'''        
+            return("Error in calculatingAngles")      
                     
     def updateCoords(self, numb, coord):
         self.Coords[numb]=coord
