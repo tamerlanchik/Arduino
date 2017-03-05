@@ -19,7 +19,7 @@ class T():
     IS_CLEAR_BUTTON_DRAW_WIDGET='Clear'
     CONNECT_BUTTON_CONNECTED='Connected'
     CONNECT_BUTTON_NOT_CONNECT='Disconnected'
-    DISPLAY_AREA_HEADER=['Top (X, Y)', 'Side (Y, Z)']
+    DISPLAY_AREA_HEADER=['Top (Y, X)', 'Side (X, Z)']
     '''
     T_WINDOW_TITLE='RoboHand controller'
     T_SETTINGS_GROUP_HEADER='Настройки'
