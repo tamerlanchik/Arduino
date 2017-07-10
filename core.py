@@ -42,7 +42,7 @@ class Core():
             self.calculatingAngles()
             a1, a2, a3=turple(self.Angles)
             if time.time()-self.lastUpdateTime>0.01:
-                message=butes( (str(a1)+ '%' + str(a2) + '&' + str(a3) + '$').encode('utf-8'))
+                message=bytes( (str(a1)+ '%' + str(a2) + '&' + str(a3) + '$').encode('utf-8'))
                 self.Serial.write(message)
                 self.lastUpdateTime=time.time()
             return ('Position was sent')
