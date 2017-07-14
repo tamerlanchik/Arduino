@@ -1,0 +1,14 @@
+import serial
+import os
+import sys
+import time
+ser = serial.Serial('COM15',  9600,  dsrdtr = 0, timeout = None)
+i =  0
+print(ser.isOpen())
+#ser.write(b'1')
+while 1:
+    ser.write(bytes(str(input('In')).encode('utf-8')))
+    if ser.inWaiting():
+        print(str(ser.readline()))
+        print('0')
+    i += 1
