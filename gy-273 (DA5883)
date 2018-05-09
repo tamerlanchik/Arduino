@@ -1,0 +1,34 @@
+#include <Wire.h>
+#include <MechaQMC5883.h>
+
+MechaQMC5883 qmc;
+int X,Y,Z;
+
+void setup() {
+  Wire.begin();
+  Serial.begin(9600);
+  qmc.init();
+  //qmc.setMode(Mode_Continuous,ODR_200Hz,RNG_2G,OSR_256);
+  int azimuth;
+  //float azimuth; //is supporting float too
+  qmc.read(&X, &Y, &Z,&azimuth);
+}
+
+void loop() {
+  int x, y, z;
+  int azimuth;
+  //float azimuth; //is supporting float too
+  qmc.read(&x, &y, &z,&azimuth);
+  //azimuth = qmc.azimuth(&y,&x);//you can get custom azimuth
+  Serial.print("x: ");
+  Serial.print((X-x)/10);
+  Serial.print(" y: ");
+  Serial.print((Y-y)/10);
+  Serial.print(" z: ");
+  Serial.print((Z-z)/10);
+  Serial.print(" a: ");
+  Serial.print(azimuth);
+  Serial.println();
+  delay(100);
+}
+//http://arduino.ru/forum/apparatnye-voprosy/gy-271-ne-mogu-zapustit#comment-333377
