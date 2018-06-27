@@ -1,0 +1,54 @@
+class ListItem{
+  public:
+      char data;
+      ListItem* prev;
+      ListItem* next;
+      ListItem(char dat){
+          data = dat;
+          prev = NULL;
+          next = NULL;
+      }
+};
+class List{
+  private:
+      ListItem* first;
+      ListItem* current;
+  public:
+      List(){
+          first = NULL;
+          current = NULL;
+      }
+      void add(char dat){
+          ListItem* temp = new ListItem(dat);
+          temp->prev = current;
+          if(current!=NULL){
+              current->next = temp;
+          }
+          current = temp;
+          if(!first){
+              first = current;
+          }
+      }
+      char pop(){
+          if(first){
+              char temp = first->data;
+              ListItem* t = first->next;
+              delete first;
+              first = t;
+              if(!t){
+                  current = NULL;
+              }
+              return temp;
+          }else{
+              return 0;
+          }
+      }
+      bool isEmpty(){
+          if(first==NULL){
+              return true;
+          }else{
+              return false;
+          }
+      }
+
+};
